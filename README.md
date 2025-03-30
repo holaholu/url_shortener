@@ -36,11 +36,13 @@ A simple and efficient URL shortener service built with Flask and Redis.
 3. Set up environment variables:
    ```bash
    # Create .env file with:
-   REDIS_HOST=localhost
-   REDIS_PORT=6379
-   REDIS_PASSWORD=your_password  # If required
-   SECRET_KEY=your_secret_key
+   REDIS_HOST=your-redis-cloud-host
+   REDIS_PORT=your-redis-port
+   REDIS_PASSWORD=your-redis-password  # Required for Redis Cloud
+   SECRET_KEY=your-secret-key
    ```
+
+   For production, use Redis Cloud credentials from your dashboard.
 
 4. Run Redis (make sure Redis is installed):
    ```bash
