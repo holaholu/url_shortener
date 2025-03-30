@@ -37,17 +37,24 @@ jobs:
     
     # Test Redis connection
     - name: Test Redis connection
+      env:
+        REDIS_HOST: ${{ secrets.REDIS_HOST }}
+        REDIS_PORT: ${{ secrets.REDIS_PORT }}
+        REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
       run: |
         python3 -c "
         from redis import Redis
         import os
         print('Testing Redis connection...')
-        print(f'Host: {os.getenv("REDIS_HOST")}')
-        print(f'Port: {os.getenv("REDIS_PORT")}')
+        host = os.environ['REDIS_HOST']
+        port = os.environ['REDIS_PORT']
+        password = os.environ['REDIS_PASSWORD']
+        print(f'Host: {host}')
+        print(f'Port: {port}')
         redis = Redis(
-            host=os.getenv('REDIS_HOST'),
-            port=int(os.getenv('REDIS_PORT')),
-            password=os.getenv('REDIS_PASSWORD'),
+            host=host,
+            port=int(port),
+            password=password,
             decode_responses=True
         )
         print('Pinging Redis...')
