@@ -1,58 +1,73 @@
+# Continuous Integration and Deployment Workflow for URL Shortener
 name: CI/CD
 
+# Trigger workflow on push to main branch and pull requests
 on:
   push:
-    branches: [ main ]
+    branches: [ main ]  # Run on pushes to main
   pull_request:
-    branches: [ main ]
+    branches: [ main ]  # Run on PRs targeting main
 
 jobs:
+  # Test job: Run tests, linting, and security checks
   test:
     runs-on: ubuntu-latest
+    
+    # Service containers
     services:
+      # Redis service for integration tests
       redis:
         image: redis
         ports:
-          - 6379:6379
-        options: >-
+          - 6379:6379  # Map container port to host
+        options: >
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
 
     steps:
+    # Check out repository code
     - uses: actions/checkout@v3
     
+    # Set up Python environment
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        
+    
+    # Install Python dependencies and tools
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8 pytest bandit
-        pip install -r requirements.txt
-        
+        pip install flake8 pytest bandit  # Install test and security tools
+        pip install -r requirements.txt  # Install project dependencies
+    
+    # Run code quality checks with flake8
     - name: Run flake8
       run: |
+        # Check for serious errors only
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Run full check but don't fail on errors
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-        
+    
+    # Run security audit with bandit
     - name: Security check with bandit
       run: |
-        bandit -r . -ll -ii -x ./venv,./tests
-        
+        bandit -r . -ll -ii -x ./venv,./tests  # Recursive check, exclude test files
+    
+  # Deployment job: Deploy to Render if tests pass
   deploy:
-    needs: test
-    if: github.ref == 'refs/heads/main'
+    needs: test  # Only run after test job succeeds
+    if: github.ref == 'refs/heads/main'  # Only deploy on main branch
     runs-on: ubuntu-latest
     
     steps:
+    # Trigger deployment on Render
     - name: Deploy to Render
       env:
-        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-      # Replace RENDER_SERVICE_ID with your actual service ID
+        RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}  # Use GitHub secret
+      # Replace RENDER_SERVICE_ID with your actual service ID from Render dashboard
       run: |
         curl -X POST "https://api.render.com/v1/services/YOUR_SERVICE_ID/deploys" \
           -H "accept: application/json" \
