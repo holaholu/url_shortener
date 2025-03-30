@@ -1,5 +1,7 @@
 # URL Shortener
 
+![URL Shortener Screenshot](urlpagescreenshot.png)
+
 A simple and efficient URL shortener service built with Flask and Redis.
 
 ## Features
