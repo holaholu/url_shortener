@@ -67,8 +67,21 @@ jobs:
     - name: Deploy to Render
       env:
         RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}  # Use GitHub secret
-      # Replace RENDER_SERVICE_ID with your actual service ID from Render dashboard
       run: |
-        curl -X POST "https://api.render.com/v1/services/YOUR_SERVICE_ID/deploys" \
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+          "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID }}/deploys" \
           -H "accept: application/json" \
-          -H "authorization: Bearer $RENDER_API_KEY"
+          -H "authorization: Bearer $RENDER_API_KEY")
+        
+        HTTP_STATUS=$(echo "$RESPONSE" | tail -n 1)
+        BODY=$(echo "$RESPONSE" | head -n -1)
+        
+        if [ "$HTTP_STATUS" -ge 200 ] && [ "$HTTP_STATUS" -lt 300 ]; then
+          echo "Deployment triggered successfully"
+          echo "Response: $BODY"
+        else
+          echo "Failed to trigger deployment"
+          echo "Status code: $HTTP_STATUS"
+          echo "Response: $BODY"
+          exit 1
+        fi

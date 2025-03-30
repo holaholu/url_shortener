@@ -36,12 +36,22 @@ redis_port = int(os.getenv('REDIS_PORT', 6379))
 redis_password = os.getenv('REDIS_PASSWORD', None)
 
 # Initialize Redis client with automatic response decoding
-redis_client = Redis(
-    host=redis_host,
-    port=redis_port,
-    password=redis_password,
-    decode_responses=True  # Automatically decode bytes to strings
-)
+try:
+    redis_client = Redis(
+        host=redis_host,
+        port=redis_port,
+        password=redis_password,
+        decode_responses=True,  # Automatically decode bytes to strings
+        socket_timeout=5  # 5 seconds timeout
+    )
+    # Test the connection
+    redis_client.ping()
+    print(f'Successfully connected to Redis at {redis_host}:{redis_port}')
+except Exception as e:
+    print(f'Error connecting to Redis: {str(e)}')
+    print(f'Redis config: host={redis_host}, port={redis_port}')
+    # Don't print password for security
+    raise
 
 # Import routes after app initialization to avoid circular imports
 from app import routes
