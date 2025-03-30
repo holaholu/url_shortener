@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>URL Shortener</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+    <style>
+      .truncate-3-lines {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      /* Light mode styles */
+      html.light {
+        background-color: #f3f4f6;
+        color: #1f2937;
+      }
+      html.light .theme-bg-primary {
+        background-color: #ffffff;
+      }
+      html.light .theme-bg-secondary {
+        background-color: #e5e7eb;
+      }
+      html.light .theme-text-primary {
+        color: #111827;
+      }
+      html.light .theme-text-secondary {
+        color: #1f2937;
+      }
+      html.light .theme-border {
+        border-color: #d1d5db;
+      }
+      html.light .url-label {
+        color: #4b5563;
+        font-weight: 700;
+      }
+      html.light .url-link {
+        color: #1f2937;
+        text-decoration: underline;
+        text-decoration-color: #9ca3af;
+      }
+      html.light .url-link:hover {
+        color: #2563eb;
+        text-decoration-color: #2563eb;
+      }
+      html.light .short-url {
+        color: #2563eb;
+      }
+      html.light .short-url:hover {
+        color: #1d4ed8;
+      }
+
+      /* Dark mode styles */
+      html.dark {
+        background-color: #111827;
+        color: #ffffff;
+      }
+      html.dark .theme-bg-primary {
+        background-color: #1f2937;
+      }
+      html.dark .theme-bg-secondary {
+        background-color: #374151;
+      }
+      html.dark .theme-text-primary {
+        color: #ffffff;
+      }
+      html.dark .theme-text-secondary {
+        color: #9ca3af;
+      }
+      html.dark .theme-border {
+        border-color: #374151;
+      }
+      html.dark .url-label {
+        color: #9ca3af;
+        font-weight: 700;
+      }
+      html.dark .url-link {
+        color: #e5e7eb;
+        text-decoration: underline;
+        text-decoration-color: #4b5563;
+      }
+      html.dark .url-link:hover {
+        color: #60a5fa;
+        text-decoration-color: #60a5fa;
+      }
+      html.dark .short-url {
+        color: #60a5fa;
+      }
+      html.dark .short-url:hover {
+        color: #93c5fd;
+      }
+
+      .tech-pill {
+        padding: 0.25rem 0.75rem;
+        border-radius: 9999px;
+        font-size: 0.875rem;
+        font-weight: 500;
+      }
+    </style>
+  </head>
+  <body class="min-h-screen flex flex-col transition-colors duration-200">
+    <!-- Theme Toggle Button -->
+    <div class="fixed top-4 right-4 z-50">
+      <button
+        onclick="toggleTheme()"
+        class="p-2 rounded-full theme-bg-primary shadow-lg"
+      >
+        <i class="fas fa-sun text-yellow-500 dark:hidden"></i>
+        <i class="fas fa-moon text-blue-300 hidden dark:inline"></i>
+      </button>
+    </div>
+    <div class="container mx-auto px-4 py-8 flex-grow">
+      <header class="text-center mb-12">
+        <h1 class="text-4xl font-bold mb-2 theme-text-primary">
+          URL Shortener
+        </h1>
+        <p class="theme-text-secondary font-medium">
+          Transform long URLs into concise, validated links with real-time
+          tracking and social sharing
+        </p>
+      </header>
+
+      <div class="flex flex-col md:flex-row gap-8 max-w-7xl mx-auto">
+        <!-- Left Column: Interface -->
+        <div class="flex-1 bg-gray-800 rounded-lg shadow-lg p-6">
+          <form id="shortenForm" class="space-y-4">
+            <div>
+              <label
+                for="url"
+                class="block text-sm font-medium text-gray-300 mb-2"
+                >Enter your URL</label
+              >
+              <input
+                type="text"
+                id="url"
+                name="url"
+                class="w-full px-4 py-2 bg-gray-700 border border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white"
+                placeholder="https://example.com/url_so_long_makes_me_wanna_sleep"
+              />
+            </div>
+            <button
+              type="submit"
+              class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-md transition duration-200"
+            >
+              Shorten URL
+            </button>
+          </form>
+
+          <div id="result" class="mt-6 hidden space-y-4">
+            <div class="p-4 bg-gray-700 rounded-md space-y-4 relative">
+              <button
+                onclick="closeResult()"
+                class="absolute -top-2 -right-2 text-red-500 hover:text-red-600 transition-colors duration-200 text-xl bg-gray-800 rounded-full p-1.5"
+              >
+                <i class="fas fa-times"></i>
+              </button>
+              <div>
+                <p class="text-sm text-gray-300 mb-2">Original URL:</p>
+                <p
+                  id="originalUrl"
+                  class="text-white break-all bg-gray-600 p-2 rounded"
+                ></p>
+              </div>
+              <div>
+                <p class="text-sm text-gray-300 mb-2">Your shortened URL:</p>
+                <div class="flex items-center space-x-2">
+                  <input
+                    type="text"
+                    id="shortUrl"
+                    readonly
+                    class="flex-1 px-3 py-2 bg-gray-600 rounded-md text-white"
+                  />
+                  <button
+                    onclick="copyToClipboard()"
+                    class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md transition duration-200"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+              <div class="pt-4 border-t border-gray-600">
+                <p class="text-sm text-gray-300 mb-3">Share on social media:</p>
+                <div class="flex space-x-4">
+                  <button
+                    onclick="shareOnTwitter()"
+                    class="px-4 py-2 bg-blue-400 hover:bg-blue-500 text-white rounded-md transition duration-200"
+                  >
+                    <i class="fab fa-twitter mr-2"></i>Twitter
+                  </button>
+                  <button
+                    onclick="shareOnFacebook()"
+                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition duration-200"
+                  >
+                    <i class="fab fa-facebook-f mr-2"></i>Facebook
+                  </button>
+                  <button
+                    onclick="shareOnLinkedIn()"
+                    class="px-4 py-2 bg-blue-800 hover:bg-blue-900 text-white rounded-md transition duration-200"
+                  >
+                    <i class="fab fa-linkedin-in mr-2"></i>LinkedIn
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div id="error" class="mt-4 mb-8 hidden">
+            <p
+              class="text-red-500 text-sm bg-red-100 border border-red-400 rounded-md p-3"
+            ></p>
+          </div>
+
+          <!-- Recent URLs Section -->
+          <div class="mt-8">
+            <h2 class="text-xl font-semibold text-white mb-4">Recent URLs</h2>
+            <div class="space-y-3" id="recentUrls">
+              <!-- Recent URLs will be populated by JavaScript -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Features -->
+        <div
+          class="md:w-96 bg-gradient-to-br from-blue-500 to-purple-600 dark:from-blue-600 dark:to-purple-700 rounded-lg shadow-lg p-6 self-start"
+        >
+          <h2 class="text-2xl font-semibold text-white mb-6">Key Features</h2>
+
+          <div class="space-y-6">
+            <div class="feature-item">
+              <div class="flex items-center mb-2">
+                <i class="fas fa-link text-blue-400 mr-3"></i>
+                <h3 class="text-lg font-medium text-white">URL Shortening</h3>
+              </div>
+              <p
+                class="text-yellow-200 dark:text-yellow-100 text-sm font-medium"
+              >
+                Transform long URLs into concise, shareable links instantly.
+              </p>
+            </div>
+
+            <div class="feature-item">
+              <div class="flex items-center mb-2">
+                <i class="fas fa-shield-alt text-green-400 mr-3"></i>
+                <h3 class="text-lg font-medium text-white">URL Validation</h3>
+              </div>
+              <p
+                class="text-yellow-200 dark:text-yellow-100 text-sm font-medium"
+              >
+                Ensures all shortened URLs are valid and accessible.
+              </p>
+            </div>
+
+            <div class="feature-item">
+              <div class="flex items-center mb-2">
+                <i class="fas fa-history text-purple-400 mr-3"></i>
+                <h3 class="text-lg font-medium text-white">Recent URLs</h3>
+              </div>
+              <p
+                class="text-yellow-200 dark:text-yellow-100 text-sm font-medium"
+              >
+                Keep track of your recently shortened URLs for quick access.
+              </p>
+            </div>
+
+            <div class="feature-item">
+              <div class="flex items-center mb-2">
+                <i class="fas fa-share-alt text-yellow-400 mr-3"></i>
+                <h3 class="text-lg font-medium text-white">Social Sharing</h3>
+              </div>
+              <p
+                class="text-yellow-200 dark:text-yellow-100 text-sm font-medium"
+              >
+                Share your shortened URLs directly to social media platforms.
+              </p>
+            </div>
+
+            <div class="feature-item">
+              <div class="flex items-center mb-2">
+                <i class="fas fa-moon text-blue-300 mr-3"></i>
+                <h3 class="text-lg font-medium text-white">Theme Toggle</h3>
+              </div>
+              <p
+                class="text-yellow-200 dark:text-yellow-100 text-sm font-medium"
+              >
+                Switch between light and dark modes for comfortable viewing.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Recent URLs management
+      function getRecentUrls() {
+        const urls = JSON.parse(localStorage.getItem("recentUrls") || "[]");
+        return urls;
+      }
+
+      function saveRecentUrls(urls) {
+        localStorage.setItem("recentUrls", JSON.stringify(urls));
+      }
+
+      function addRecentUrl(urlData) {
+        const urls = getRecentUrls();
+        urls.unshift(urlData); // Add to beginning
+        if (urls.length > 10) urls.pop(); // Keep only last 10
+        saveRecentUrls(urls);
+        displayRecentUrls();
+      }
+
+      function displayRecentUrls() {
+        const urls = getRecentUrls();
+        const recentUrlsDiv = document.getElementById("recentUrls");
+        recentUrlsDiv.innerHTML = "";
+
+        if (urls.length === 0) {
+          const emptyMessage = document.createElement("div");
+          emptyMessage.className =
+            "p-6 theme-bg-secondary rounded-md text-center";
+          emptyMessage.innerHTML = `
+                    <i class="fas fa-link text-4xl theme-text-secondary mb-3"></i>
+                    <p class="theme-text-secondary text-lg">No recent URLs yet</p>
+                    <p class="theme-text-secondary text-sm mt-2">Shortened URLs will appear here</p>
+                `;
+          recentUrlsDiv.appendChild(emptyMessage);
+          return;
+        }
+
+        urls.forEach((url) => {
+          const urlDiv = document.createElement("div");
+          urlDiv.className = "p-4 theme-bg-secondary rounded-md";
+          urlDiv.setAttribute("data-short-id", url.short_id);
+
+          urlDiv.innerHTML = `
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-start">
+                            <div class="space-y-2 flex-1 mr-4">
+                                <p class="text-sm url-label">Original URL:</p>
+                                <a href="${url.original_url}" target="_blank" rel="noopener noreferrer" 
+                                   class="url-link break-all truncate-3-lines block transition duration-200">${url.original_url}</a>
+                                <p class="text-sm url-label mt-2">Short URL:</p>
+                                <a href="${url.short_url}" target="_blank" rel="noopener noreferrer" 
+                                   class="short-url break-all transition duration-200">${url.short_url}</a>
+                            </div>
+                            <button onclick="deleteUrl('${url.short_id}')" 
+                                    class="text-red-400 hover:text-red-500 transition duration-200">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        <div class="flex space-x-2 pt-2 border-t border-gray-700">
+                            <button onclick="shareOnTwitter('${url.short_url}')" 
+                                    class="px-2 py-1 bg-blue-400 hover:bg-blue-500 text-white rounded-md text-sm transition duration-200">
+                                <i class="fab fa-twitter mr-1"></i>Tweet
+                            </button>
+                            <button onclick="shareOnFacebook('${url.short_url}')" 
+                                    class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-sm transition duration-200">
+                                <i class="fab fa-facebook-f mr-1"></i>Share
+                            </button>
+                            <button onclick="shareOnLinkedIn('${url.short_url}')" 
+                                    class="px-2 py-1 bg-blue-800 hover:bg-blue-900 text-white rounded-md text-sm transition duration-200">
+                                <i class="fab fa-linkedin-in mr-1"></i>Post
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+          recentUrlsDiv.appendChild(urlDiv);
+        });
+      }
+
+      // Display recent URLs on page load
+      document.addEventListener("DOMContentLoaded", displayRecentUrls);
+
+      document
+        .getElementById("shortenForm")
+        .addEventListener("submit", async (e) => {
+          e.preventDefault();
+
+          const urlInput = document.getElementById("url");
+          const resultDiv = document.getElementById("result");
+          const errorDiv = document.getElementById("error");
+          const shortUrlInput = document.getElementById("shortUrl");
+          const originalUrlDiv = document.getElementById("originalUrl");
+
+          try {
+            const formData = new URLSearchParams();
+            formData.append("url", urlInput.value);
+
+            const response = await fetch("/shorten", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: formData,
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+              errorDiv.classList.add("hidden");
+              resultDiv.classList.remove("hidden");
+              shortUrlInput.value = data.short_url;
+              originalUrlDiv.textContent = data.original_url;
+
+              // Clear input box
+              urlInput.value = "";
+
+              // Add to recent URLs list
+              addRecentUrl({
+                short_id: data.short_id,
+                short_url: data.short_url,
+                original_url: data.original_url,
+                created_at: new Date().toISOString(),
+              });
+            } else {
+              errorDiv.classList.remove("hidden");
+              errorDiv.querySelector("p").textContent = data.error;
+              resultDiv.classList.add("hidden");
+            }
+          } catch (error) {
+            errorDiv.classList.remove("hidden");
+            errorDiv.querySelector("p").textContent =
+              "An error occurred. Please try again.";
+            resultDiv.classList.add("hidden");
+          }
+        });
+
+      function copyToClipboard() {
+        const shortUrl = document.getElementById("shortUrl");
+        shortUrl.select(); // Select the text inside the text field
+        document.execCommand("copy"); // Copy the text inside the text field
+
+        const copyButton = document.querySelector(
+          'button[onclick="copyToClipboard()"]'
+        );
+        const originalText = copyButton.textContent;
+        copyButton.textContent = "Copied!";
+        copyButton.classList.remove("bg-green-600", "hover:bg-green-700");
+        copyButton.classList.add("bg-gray-600");
+
+        setTimeout(() => {
+          copyButton.textContent = originalText;
+          copyButton.classList.remove("bg-gray-600");
+          copyButton.classList.add("bg-green-600", "hover:bg-green-700");
+        }, 2000);
+      }
+
+      function shareOnTwitter() {
+        const shortUrl = document.getElementById("shortUrl").value;
+        const text = "Check out this link: ";
+        window.open(
+          `https://twitter.com/intent/tweet?text=${encodeURIComponent(
+            text
+          )}&url=${encodeURIComponent(shortUrl)}`
+        );
+      }
+
+      function shareOnFacebook() {
+        const shortUrl = document.getElementById("shortUrl").value;
+        window.open(
+          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+            shortUrl
+          )}`
+        );
+      }
+
+      function shareOnLinkedIn() {
+        const shortUrl = document.getElementById("shortUrl").value;
+        window.open(
+          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(
+            shortUrl
+          )}`
+        );
+      }
+
+      function closeResult() {
+        const resultDiv = document.getElementById("result");
+        const errorDiv = document.getElementById("error");
+        resultDiv.classList.add("hidden");
+        errorDiv.classList.add("hidden");
+        document.getElementById("shortenForm").reset();
+      }
+
+      async function deleteUrl(shortId) {
+        if (!confirm("Are you sure you want to delete this URL? This short URL will be permanently removed.")) return;
+
+        try {
+          const response = await fetch(`/${shortId}`, {
+            method: "DELETE",
+          });
+
+          if (response.ok) {
+            // Remove from localStorage
+            const urls = getRecentUrls();
+            const updatedUrls = urls.filter((url) => url.short_id !== shortId);
+            saveRecentUrls(updatedUrls);
+            displayRecentUrls();
+          }
+        } catch (error) {
+          console.error("Error deleting URL:", error);
+        }
+      }
+
+    </script>
+    <!-- Footer -->
+    <footer class="theme-bg-primary border-t theme-border mt-12 py-8">
+      <div class="container mx-auto px-4">
+        <div class="max-w-6xl mx-auto text-center">
+          <!-- Technologies -->
+          <div class="mb-8">
+            <h3 class="text-lg font-semibold mb-4 theme-text-primary">
+              Technologies Used
+            </h3>
+            <div class="flex flex-wrap justify-center gap-2">
+              <a
+                href="https://www.python.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="tech-pill bg-yellow-100 text-yellow-800 hover:bg-yellow-200 transition duration-200"
+                >Python</a
+              >
+              <a
+                href="https://flask.palletsprojects.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="tech-pill bg-red-100 text-red-800 hover:bg-red-200 transition duration-200"
+                >Flask</a
+              >
+              <a
+                href="https://redis.io"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="tech-pill bg-blue-100 text-blue-800 hover:bg-blue-200 transition duration-200"
+                >Redis</a
+              >
+              <a
+                href="https://tailwindcss.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="tech-pill bg-purple-100 text-purple-800 hover:bg-purple-200 transition duration-200"
+                >Tailwind CSS</a
+              >
+              <a
+                href="https://render.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="tech-pill bg-green-100 text-green-800 hover:bg-green-200 transition duration-200"
+                >Render</a
+              >
+            </div>
+          </div>
+          <!-- Copyright -->
+          <div class="pt-4 border-t theme-border">
+            <p class="theme-text-secondary mb-4">
+              © 2025 Ola Adisa. All rights reserved.
+            </p>
+            <!-- Social Links -->
+            <div class="flex justify-center space-x-6">
+              <a
+                href="https://github.com/holaholu"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="theme-text-secondary hover:text-blue-500 transition duration-200"
+              >
+                <i class="fab fa-github text-2xl"></i>
+              </a>
+              <a
+                href="https://www.linkedin.com/in/olaoluadisa/"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="theme-text-secondary hover:text-blue-500 transition duration-200"
+              >
+                <i class="fab fa-linkedin text-2xl"></i>
+              </a>
+              <a
+                href="mailto:olaoluhimself@yahoo.com"
+                class="theme-text-secondary hover:text-blue-500 transition duration-200"
+              >
+                <i class="fas fa-envelope text-2xl"></i>
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      // Theme toggle functionality
+      function toggleTheme() {
+        const html = document.documentElement;
+        if (html.classList.contains("light")) {
+          html.classList.remove("light");
+          html.classList.add("dark");
+          localStorage.setItem("theme", "dark");
+        } else {
+          html.classList.remove("dark");
+          html.classList.add("light");
+          localStorage.setItem("theme", "light");
+        }
+      }
+
+      // Set initial theme
+      document.addEventListener("DOMContentLoaded", () => {
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.classList.add(savedTheme);
+      });
+    </script>
+  </body>
+</html>
