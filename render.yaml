@@ -1,17 +1,25 @@
+# Render deployment configuration
 services:
-  - type: web
-    name: tiny
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn wsgi:app
+  # Web service configuration
+  - type: web  # Specifies this is a web service (not a static site or cron job)
+    name: tiny  # Service name - will be part of the URL
+    env: python  # Runtime environment
+    buildCommand: pip install -r requirements.txt  # Command to run during build phase
+    startCommand: gunicorn wsgi:app  # Command to start the application
+    
+    # Environment variables required by the application
     envVars:
       - key: PYTHON_VERSION
-        value: 3.9.0
+        value: 3.9.0  # Specify Python version explicitly
+      
+      # Redis connection details (to be configured in Render dashboard)
       - key: REDIS_HOST
-        sync: false
+        sync: false  # Values will be set in Render dashboard
       - key: REDIS_PORT
         sync: false
       - key: REDIS_PASSWORD
         sync: false
+      
+      # Flask secret key for session management
       - key: SECRET_KEY
         generateValue: true
